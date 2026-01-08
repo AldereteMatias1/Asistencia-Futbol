@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { PartidoService } from './partido.service';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { CreatePartidoDto } from './dto/create-partido.dto';
+import { FinalizarPartidoDto } from './dto/finalizar-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
+import { PartidoService } from './partido.service';
 
 @Controller('partido')
 export class PartidoController {
@@ -18,17 +27,33 @@ export class PartidoController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.partidoService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.partidoService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePartidoDto: UpdatePartidoDto) {
-    return this.partidoService.update(+id, updatePartidoDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updatePartidoDto: UpdatePartidoDto,
+  ) {
+    return this.partidoService.update(id, updatePartidoDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.partidoService.remove(+id);
+  @Post(':id/iniciar')
+  iniciar(@Param('id', ParseIntPipe) id: number) {
+    return this.partidoService.iniciar(id);
+  }
+
+  @Post(':id/finalizar')
+  finalizar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() finalizarPartidoDto: FinalizarPartidoDto,
+  ) {
+    return this.partidoService.finalizar(id, finalizarPartidoDto);
+  }
+
+  @Post(':id/cancelar')
+  cancelar(@Param('id', ParseIntPipe) id: number) {
+    return this.partidoService.cancelar(id);
   }
 }

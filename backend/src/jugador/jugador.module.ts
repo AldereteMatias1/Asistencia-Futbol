@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
-import { JugadorService } from './jugador.service';
+import { DbModule } from '../db/db.module';
 import { JugadorController } from './jugador.controller';
+import { JugadorRepository } from './jugador.repository';
+import { JugadorService } from './jugador.service';
 
 @Module({
+  imports: [DbModule],
   controllers: [JugadorController],
-  providers: [JugadorService],
+  providers: [JugadorService, JugadorRepository],
+  exports: [JugadorService, JugadorRepository],
 })
 export class JugadorModule {}
