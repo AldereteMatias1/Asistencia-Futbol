@@ -1,1 +1,4 @@
-export class CreateJugadorDto {}
+export class CreateJugadorDto {
+  nombre: string;
+  apellido: string;
+}
