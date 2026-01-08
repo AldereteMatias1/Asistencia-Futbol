@@ -6,6 +6,7 @@ import { DbModule } from './db/db.module';
 import { JugadorModule } from './jugador/jugador.module';
 import { PartidoModule } from './partido/partido.module';
 import { ParticipacionModule } from './participacion/participacion.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ParticipacionModule } from './participacion/participacion.module';
     JugadorModule,
     PartidoModule,
     ParticipacionModule,
+    StatsModule,
     DbModule,
   ],
   controllers: [AppController],
