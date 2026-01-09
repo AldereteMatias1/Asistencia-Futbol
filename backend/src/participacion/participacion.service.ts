@@ -91,26 +91,21 @@ export class ParticipacionService {
 
 
   async reactivar(partidoId: number, dto: ReactivarParticipacionDto) {
-    if (!dto.participacionId) {
+    const participacionId = Number(dto.participacionId);
+    if (!participacionId) {
       throw new BadRequestException('participacionId es obligatorio');
     }
 
     return this.dbService.withTransaction(async (client) => {
-      const partido = await this.partidoRepository.findById(partidoId, client);
-      if (!partido) {
-        throw new NotFoundException('Partido no encontrado');
-      }
+      const partido = await this.partidoRepository.findById(Number(partidoId), client);
+      if (!partido) throw new NotFoundException('Partido no encontrado');
+
       this.validarNoFinalizado(partido);
 
-      const participacion = await this.participacionRepository.findById(
-        dto.participacionId,
-        client,
-      );
-      if (!participacion) {
-        throw new NotFoundException('Participacion no encontrada');
-      }
+      const participacion = await this.participacionRepository.findById(participacionId, client);
+      if (!participacion) throw new NotFoundException('Participacion no encontrada');
 
-      if (participacion.obtenerPartidoId() !== partidoId) {
+      if (Number(participacion.obtenerPartidoId()) !== Number(partidoId)) {
         throw new BadRequestException('La participación no pertenece a este partido');
       }
 
@@ -126,29 +121,25 @@ export class ParticipacionService {
     });
   }
 
+
   async cambiarEquipo(partidoId: number, dto: CambiarEquipoDto) {
-    if (!dto.participacionId) {
+    const participacionId = Number(dto.participacionId);
+    if (!participacionId) {
       throw new BadRequestException('participacionId es obligatorio');
     }
 
     this.validarEquipo(dto.equipo);
 
     return this.dbService.withTransaction(async (client) => {
-      const partido = await this.partidoRepository.findById(partidoId, client);
-      if (!partido) {
-        throw new NotFoundException('Partido no encontrado');
-      }
+      const partido = await this.partidoRepository.findById(Number(partidoId), client);
+      if (!partido) throw new NotFoundException('Partido no encontrado');
+
       this.validarNoFinalizado(partido);
 
-      const participacion = await this.participacionRepository.findById(
-        dto.participacionId,
-        client,
-      );
-      if (!participacion) {
-        throw new NotFoundException('Participacion no encontrada');
-      }
+      const participacion = await this.participacionRepository.findById(participacionId, client);
+      if (!participacion) throw new NotFoundException('Participacion no encontrada');
 
-      if (participacion.obtenerPartidoId() !== partidoId) {
+      if (Number(participacion.obtenerPartidoId()) !== Number(partidoId)) {
         throw new BadRequestException('La participación no pertenece a este partido');
       }
 
