@@ -334,7 +334,7 @@ export const PartidoDetailPage: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-500">Equipo A</p>
-                <Badge tone="info">{equipoA.length}/7</Badge>
+                <Badge tone="info">{equipoA.length}</Badge>
               </div>
               <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
                 {equipoA.map((item) => (
@@ -362,7 +362,7 @@ export const PartidoDetailPage: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-500">Equipo B</p>
-                <Badge tone="info">{equipoB.length}/7</Badge>
+                <Badge tone="info">{equipoB.length}</Badge>
               </div>
               <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
                 {equipoB.map((item) => (

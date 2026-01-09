@@ -54,8 +54,12 @@ export const DashboardPage: React.FC = () => {
     queryFn: () => fetchGanadores({ minPartidos: 1, limit: 10 }),
   });
 
-  const totalAsistencias = asistenciasQuery.data?.reduce((acc, item) => acc + item.total, 0) ?? 0;
-  const totalBajas = bajasQuery.data?.reduce((acc, item) => acc + item.total, 0) ?? 0;
+const totalAsistencias =
+  asistenciasQuery.data?.reduce((acc, item) => acc + item.asistencias, 0) ?? 0;
+
+const totalBajas =
+  bajasQuery.data?.reduce((acc, item) => acc + item.bajas, 0) ?? 0;
+
 
   const isLoading =
     jugadoresQuery.isLoading ||
@@ -134,26 +138,29 @@ export const DashboardPage: React.FC = () => {
           title="Top 10 asistencias"
           headers={['Jugador', 'Total']}
           rows={(asistenciasQuery.data ?? []).slice(0, 10).map((item) => ({
-            key: item.jugadorId,
-            cols: [item.jugadorNombre, item.total],
+            key: String(item.jugadorId),
+            cols: [`${item.nombre} ${item.apellido}`, item.asistencias],
           }))}
+
         />
         <TopList
           title="Top 10 bajas"
           headers={['Jugador', 'Total']}
           rows={(bajasQuery.data ?? []).slice(0, 10).map((item) => ({
-            key: item.jugadorId,
-            cols: [item.jugadorNombre, item.total],
+            key: String(item.jugadorId),
+            cols: [`${item.nombre} ${item.apellido}`, item.bajas],
           }))}
+
         />
         <TopList
-          title="Top ganadores"
-          headers={['Equipo', 'Total']}
+          title="Top ganadores (winrate)"
+          headers={['Jugador', 'Winrate']}
           rows={(ganadoresQuery.data ?? []).map((item) => ({
-            key: item.equipo,
-            cols: [item.equipo, item.total],
+            key: String(item.jugadorId),
+            cols: [`${item.nombre} ${item.apellido}`, `${item.winrate.toFixed(2)}%`],
           }))}
         />
+
       </div>
     </div>
   );
