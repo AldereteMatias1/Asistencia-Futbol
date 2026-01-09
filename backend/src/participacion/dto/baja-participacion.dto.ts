@@ -1,9 +1,14 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt, IsPositive, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class BajaParticipacionDto {
-  @ApiProperty({ example: 10 })
-  jugadorId: number;
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  participacionId: number;
 
-  @ApiPropertyOptional({ example: 'Se retiró por lesión.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   comentarios?: string;
 }

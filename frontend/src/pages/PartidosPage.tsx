@@ -52,7 +52,14 @@ export const PartidosPage: React.FC = () => {
     onError: handleApiError,
   });
 
-  const onSubmit = (values: FormValues) => createMutation.mutate(values);
+  const onSubmit = (values: FormValues) =>
+    createMutation.mutate({
+      fechaHora: new Date(values.fecha).toISOString(),
+      cancha: values.cancha,
+      equipoANombre: values.equipoA,
+      equipoBNombre: values.equipoB,
+  });
+
 
   return (
     <div className="container-page space-y-6">
@@ -135,9 +142,12 @@ export const PartidosPage: React.FC = () => {
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
-                    {partido.equipoA} vs {partido.equipoB}
+                    {partido.equipoANombre} vs {partido.equipoBNombre}
                   </p>
-                  <p className="text-xs text-slate-500">{formatDateTime(partido.fecha)} · {partido.cancha}</p>
+                  <p className="text-xs text-slate-500">
+                    {formatDateTime(partido.fechaHora)} · {partido.cancha}
+                  </p>
+
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge tone={partido.estado === 'EN_JUEGO' ? 'info' : partido.estado === 'FINALIZADO' ? 'success' : 'warning'}>

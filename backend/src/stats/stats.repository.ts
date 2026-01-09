@@ -74,34 +74,41 @@ export class StatsRepository {
   }
 
   async obtenerRankingGanadores(
-    limit: number,
-    minPartidos: number,
-  ): Promise<GanadoresRankingDto[]> {
-    const query = `
-      SELECT
-        j.id_jugador,
-        j.nombre_jugador,
-        j.apellido_jugador,
-        COUNT(*) AS partidos_jugados,
-        COUNT(*) FILTER (WHERE p.equipo = pa.ganador) AS victorias,
-        ROUND(
-          (COUNT(*) FILTER (WHERE p.equipo = pa.ganador)::numeric / COUNT(*)::numeric) * 100,
-          2
-        ) AS winrate
-      FROM mydb.participaciones p
-      INNER JOIN mydb.partidos pa ON pa.id_partido = p.partido_id
-      INNER JOIN mydb.jugadores j ON j.id_jugador = p.jugador_id
-      WHERE p.estado = 'PRESENTE'
-        AND pa.estado = 'FINALIZADO'
-        AND pa.ganador IN ('A', 'B')
-      GROUP BY j.id_jugador, j.nombre_jugador, j.apellido_jugador
-      HAVING COUNT(*) >= $2
-      ORDER BY victorias DESC, winrate DESC, j.apellido_jugador ASC, j.nombre_jugador ASC
-      LIMIT $1
-    `;
-    const result = await this.dbService.query<GanadoresRow>(query, [limit, minPartidos]);
-    return result.rows.map((row) => this.mapGanadoresRow(row));
-  }
+  limit: number,
+  minPartidos: number,
+): Promise<GanadoresRankingDto[]> {
+  const query = `
+    SELECT
+      j.id_jugador,
+      j.nombre_jugador,
+      j.apellido_jugador,
+      COUNT(*) AS partidos_jugados,
+      COUNT(*) FILTER (
+        WHERE p.equipo IS NOT NULL
+          AND p.equipo::text = pa.ganador::text
+      ) AS victorias,
+      ROUND(
+        (COUNT(*) FILTER (
+          WHERE p.equipo IS NOT NULL
+            AND p.equipo::text = pa.ganador::text
+        )::numeric / NULLIF(COUNT(*)::numeric, 0)) * 100,
+        2
+      ) AS winrate
+    FROM mydb.participaciones p
+    INNER JOIN mydb.partidos pa ON pa.id_partido = p.partido_id
+    INNER JOIN mydb.jugadores j ON j.id_jugador = p.jugador_id
+    WHERE p.estado = 'PRESENTE'
+      AND pa.estado = 'FINALIZADO'
+      AND pa.ganador IN ('A', 'B')
+    GROUP BY j.id_jugador, j.nombre_jugador, j.apellido_jugador
+    HAVING COUNT(*) >= $2
+    ORDER BY victorias DESC, winrate DESC, j.apellido_jugador ASC, j.nombre_jugador ASC
+    LIMIT $1
+  `;
+  const result = await this.dbService.query<GanadoresRow>(query, [limit, minPartidos]);
+  return result.rows.map((row) => this.mapGanadoresRow(row));
+}
+
 
   private mapAsistenciaRow(row: AsistenciaRow): AsistenciaRankingDto {
     return {

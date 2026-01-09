@@ -12,8 +12,16 @@ export const StatsPage: React.FC = () => {
   const [limit, setLimit] = React.useState('100');
   const [minPartidos, setMinPartidos] = React.useState('1');
 
-  const asistenciasQuery = useQuery({ queryKey: ['stats', 'asistencias'], queryFn: fetchAsistencias });
-  const bajasQuery = useQuery({ queryKey: ['stats', 'bajas'], queryFn: fetchBajas });
+  const asistenciasQuery = useQuery({
+    queryKey: ['stats', 'asistencias'],
+    queryFn: fetchAsistencias,
+  });
+
+  const bajasQuery = useQuery({
+    queryKey: ['stats', 'bajas'],
+    queryFn: fetchBajas,
+  });
+
   const ganadoresQuery = useQuery({
     queryKey: ['stats', 'ganadores', minPartidos, limit],
     queryFn: () =>
@@ -47,13 +55,13 @@ export const StatsPage: React.FC = () => {
               label="Mínimo de partidos"
               type="number"
               value={minPartidos}
-              onChange={(event) => setMinPartidos(event.target.value)}
+              onChange={(e) => setMinPartidos(e.target.value)}
             />
             <Input
               label="Límite"
               type="number"
               value={limit}
-              onChange={(event) => setLimit(event.target.value)}
+              onChange={(e) => setLimit(e.target.value)}
             />
             <Button
               variant="secondary"
@@ -67,58 +75,91 @@ export const StatsPage: React.FC = () => {
       )}
 
       <Card className="space-y-3">
+        {/* ===== DESKTOP ===== */}
         <div className="hidden md:block">
           {tab === 'asistencias' && (
             <Table headers={['Jugador', 'Total']}>
               {(asistenciasQuery.data ?? []).map((item) => (
                 <tr key={item.jugadorId}>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.jugadorNombre}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{item.total}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                    {item.jugadorNombre}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {item.total}
+                  </td>
                 </tr>
               ))}
             </Table>
           )}
+
           {tab === 'bajas' && (
             <Table headers={['Jugador', 'Total']}>
               {(bajasQuery.data ?? []).map((item) => (
                 <tr key={item.jugadorId}>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.jugadorNombre}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{item.total}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                    {item.jugadorNombre}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {item.total}
+                  </td>
                 </tr>
               ))}
             </Table>
           )}
+
           {tab === 'ganadores' && (
             <Table headers={['Equipo', 'Total']}>
-              {(ganadoresQuery.data ?? []).map((item) => (
-                <tr key={item.equipo}>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.equipo}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{item.total}</td>
+              {(ganadoresQuery.data ?? []).map((item, index) => (
+                <tr key={`${item.equipo}-${index}`}>
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                    {item.equipo}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {item.total}
+                  </td>
                 </tr>
               ))}
             </Table>
           )}
         </div>
 
+        {/* ===== MOBILE ===== */}
         <div className="space-y-3 md:hidden">
           {tab === 'asistencias' &&
             (asistenciasQuery.data ?? []).map((item) => (
-              <div key={item.jugadorId} className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-sm font-semibold text-slate-900">{item.jugadorNombre}</p>
+              <div
+                key={item.jugadorId}
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <p className="text-sm font-semibold text-slate-900">
+                  {item.jugadorNombre}
+                </p>
                 <p className="text-xs text-slate-500">Total: {item.total}</p>
               </div>
             ))}
+
           {tab === 'bajas' &&
             (bajasQuery.data ?? []).map((item) => (
-              <div key={item.jugadorId} className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-sm font-semibold text-slate-900">{item.jugadorNombre}</p>
+              <div
+                key={item.jugadorId}
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <p className="text-sm font-semibold text-slate-900">
+                  {item.jugadorNombre}
+                </p>
                 <p className="text-xs text-slate-500">Total: {item.total}</p>
               </div>
             ))}
+
           {tab === 'ganadores' &&
-            (ganadoresQuery.data ?? []).map((item) => (
-              <div key={item.equipo} className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-sm font-semibold text-slate-900">{item.equipo}</p>
+            (ganadoresQuery.data ?? []).map((item, index) => (
+              <div
+                key={`${item.equipo}-${index}`}
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <p className="text-sm font-semibold text-slate-900">
+                  {item.equipo}
+                </p>
                 <p className="text-xs text-slate-500">Total: {item.total}</p>
               </div>
             ))}

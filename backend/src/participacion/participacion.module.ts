@@ -1,14 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DbModule } from '../db/db.module';
-import { JugadorModule } from '../jugador/jugador.module';
 import { PartidoModule } from '../partido/partido.module';
+import { JugadorModule } from '../jugador/jugador.module';
+
 import { ParticipacionController } from './participacion.controller';
-import { ParticipacionRepository } from './participacion.repository';
 import { ParticipacionService } from './participacion.service';
+import { ParticipacionRepository } from './participacion.repository';
 
 @Module({
-  imports: [DbModule, PartidoModule, JugadorModule],
+  imports: [
+    DbModule,
+    forwardRef(() => PartidoModule),
+    forwardRef(() => JugadorModule),
+  ],
   controllers: [ParticipacionController],
   providers: [ParticipacionService, ParticipacionRepository],
+  exports: [ParticipacionRepository], // ✅ ESTO ES LO CLAVE
 })
 export class ParticipacionModule {}

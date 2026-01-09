@@ -1,7 +1,15 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchPartido, iniciarPartido, finalizarPartido, anotarJugador, bajaJugador, reactivarJugador, cambiarEquipo } from '../features/partidos/api';
+import {
+  fetchPartido,
+  iniciarPartido,
+  finalizarPartido,
+  anotarJugador,
+  bajaJugador,
+  reactivarJugador,
+  cambiarEquipo,
+} from '../features/partidos/api';
 import { fetchJugadores } from '../features/jugadores/api';
 import { Card } from '../components/ui/Card';
 import { Stepper, StepItem } from '../components/ui/Stepper';
@@ -19,13 +27,21 @@ export const PartidoDetailPage: React.FC = () => {
   const { id } = useParams();
   const { isAdmin } = useAdmin();
   const queryClient = useQueryClient();
+
   const [selectedTeam, setSelectedTeam] = React.useState<'A' | 'B'>('A');
   const [search, setSearch] = React.useState('');
   const [tab, setTab] = React.useState('presentes');
   const [winner, setWinner] = React.useState<'A' | 'B' | 'EMPATE'>('A');
-  const [teamModal, setTeamModal] = React.useState<{ open: boolean; participacion?: Participacion; action?: 'reactivar' | 'cambiar' }>({
-    open: false,
-  });
+
+  const [teamModal, setTeamModal] = React.useState<{
+    open: boolean;
+    participacion?: Participacion;
+    action?: 'reactivar' | 'cambiar';
+  }>({ open: false });
+
+  const [selectedDraft, setSelectedDraft] = React.useState<
+    Array<{ jugadorId: string; equipo: 'A' | 'B' }>
+  >([]);
 
   const partidoQuery = useQuery({
     queryKey: ['partido', id],
@@ -47,7 +63,8 @@ export const PartidoDetailPage: React.FC = () => {
   });
 
   const finalizarMutation = useMutation({
-    mutationFn: (payload: { ganador: 'A' | 'B' | 'EMPATE' }) => finalizarPartido(id ?? '', payload),
+    mutationFn: (payload: { ganador: 'A' | 'B' | 'EMPATE' }) =>
+      finalizarPartido(id ?? '', payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['partido', id] });
     },
@@ -67,7 +84,8 @@ export const PartidoDetailPage: React.FC = () => {
   });
 
   const bajaMutation = useMutation({
-    mutationFn: (payload: { participacionId: string }) => bajaJugador(id ?? '', payload),
+    mutationFn: (payload: { participacionId: string }) =>
+      bajaJugador(id ?? '', payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['partido', id] });
     },
@@ -84,7 +102,8 @@ export const PartidoDetailPage: React.FC = () => {
   });
 
   const cambiarEquipoMutation = useMutation({
-    mutationFn: (payload: { participacionId: string; equipo: 'A' | 'B' }) => cambiarEquipo(id ?? '', payload),
+    mutationFn: (payload: { participacionId: string; equipo: 'A' | 'B' }) =>
+      cambiarEquipo(id ?? '', payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['partido', id] });
     },
@@ -97,57 +116,29 @@ export const PartidoDetailPage: React.FC = () => {
   const presentes = participaciones.filter((item) => item.activo);
   const bajas = participaciones.filter((item) => !item.activo);
 
+  // ✅ sincronizar SIEMPRE el draft con las participaciones del backend
+  React.useEffect(() => {
+    if (!partido) return;
+    const base = (partido.participaciones ?? []).map((p) => ({
+      jugadorId: String(p.jugadorId),
+      equipo: p.equipo as 'A' | 'B',
+    }));
+    setSelectedDraft(base);
+  }, [partido?.id, partido?.participaciones?.length]);
+
   const jugadoresActivos = (jugadoresQuery.data ?? []).filter((jugador) => jugador.activo);
 
-  const selectedIds = new Set(participaciones.map((item) => item.jugadorId));
+  const selectedIds = new Set(participaciones.map((item) => String(item.jugadorId)));
+
   const filteredJugadores = jugadoresActivos.filter((jugador) =>
     jugador.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
-  const steps: StepItem[] = [
-    { id: 'crear', label: 'Crear', description: 'Datos iniciales', state: 'done' },
-    { id: 'jugadores', label: 'Jugadores', description: 'Seleccionar equipos', state: 'upcoming' },
-    { id: 'iniciar', label: 'Iniciar', description: 'Poner en juego', state: 'upcoming' },
-    { id: 'gestionar', label: 'Gestionar', description: 'Bajas y cambios', state: 'upcoming' },
-    { id: 'finalizar', label: 'Finalizar', description: 'Cerrar partido', state: 'upcoming' },
-  ];
-
-  if (partido) {
-    const hasJugadores = participaciones.length > 0;
-    if (!hasJugadores) {
-      steps[1].state = 'current';
-    } else {
-      steps[1].state = 'done';
-    }
-
-    if (partido.estado === 'PROGRAMADO') {
-      steps[2].state = hasJugadores ? 'current' : 'upcoming';
-    }
-
-    if (partido.estado === 'EN_JUEGO') {
-      steps[2].state = 'done';
-      steps[3].state = 'current';
-    }
-
-    if (partido.estado === 'FINALIZADO') {
-      steps[2].state = 'done';
-      steps[3].state = 'done';
-      steps[4].state = 'current';
-    }
-  }
-
   const confirmSeleccion = () => {
-    const newEntries = selectedDraft.filter((item) => !selectedIds.has(item.jugadorId));
+    const newEntries = selectedDraft.filter((item) => !selectedIds.has(String(item.jugadorId)));
     if (newEntries.length === 0) return;
     anotarMutation.mutate(newEntries);
   };
-
-  const [selectedDraft, setSelectedDraft] = React.useState<Array<{ jugadorId: string; equipo: 'A' | 'B' }>>([]);
-
-  React.useEffect(() => {
-    if (!partido) return;
-    setSelectedDraft(participaciones.map((item) => ({ jugadorId: item.jugadorId, equipo: item.equipo })));
-  }, [partido?.id, participaciones]);
 
   const handleAdd = (jugadorId: string) => {
     if (selectedDraft.some((item) => item.jugadorId === jugadorId)) return;
@@ -161,17 +152,46 @@ export const PartidoDetailPage: React.FC = () => {
   const equipoA = selectedDraft.filter((item) => item.equipo === 'A');
   const equipoB = selectedDraft.filter((item) => item.equipo === 'B');
 
+  const steps: StepItem[] = [
+    { id: 'crear', label: 'Crear', description: 'Datos iniciales', state: 'done' },
+    { id: 'jugadores', label: 'Jugadores', description: 'Seleccionar equipos', state: 'upcoming' },
+    { id: 'iniciar', label: 'Iniciar', description: 'Poner en juego', state: 'upcoming' },
+    { id: 'gestionar', label: 'Gestionar', description: 'Bajas y cambios', state: 'upcoming' },
+    { id: 'finalizar', label: 'Finalizar', description: 'Cerrar partido', state: 'upcoming' },
+  ];
+
+  if (partido) {
+    const hasJugadores = participaciones.length > 0;
+
+    steps[1].state = hasJugadores ? 'done' : 'current';
+
+    if (partido.estado === 'PROGRAMADO') {
+      steps[2].state = hasJugadores ? 'current' : 'upcoming';
+    }
+    if (partido.estado === 'EN_JUEGO') {
+      steps[2].state = 'done';
+      steps[3].state = 'current';
+    }
+    if (partido.estado === 'FINALIZADO') {
+      steps[2].state = 'done';
+      steps[3].state = 'done';
+      steps[4].state = 'current';
+    }
+  }
+
   const handleTeamAction = (action: 'reactivar' | 'cambiar', participacion: Participacion) => {
     setTeamModal({ open: true, participacion, action });
   };
 
   const submitTeamAction = (team: 'A' | 'B') => {
     if (!teamModal.participacion || !teamModal.action) return;
+
     if (teamModal.action === 'reactivar') {
       reactivarMutation.mutate({ participacionId: teamModal.participacion.id, equipo: team });
     } else {
       cambiarEquipoMutation.mutate({ participacionId: teamModal.participacion.id, equipo: team });
     }
+
     setTeamModal({ open: false });
   };
 
@@ -188,7 +208,10 @@ export const PartidoDetailPage: React.FC = () => {
   return (
     <div className="container-page space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-slate-900">{partido.equipoA} vs {partido.equipoB}</h2>
+        {/* ✅ campos correctos */}
+        <h2 className="text-2xl font-semibold text-slate-900">
+          {partido.equipoANombre} vs {partido.equipoBNombre}
+        </h2>
         <p className="text-sm text-slate-500">Flujo del partido y operaciones admin.</p>
       </div>
 
@@ -207,14 +230,26 @@ export const PartidoDetailPage: React.FC = () => {
               <p className="text-sm font-semibold text-slate-900">Datos del partido</p>
               <p className="text-xs text-slate-500">Estado actual: {partido.estado}</p>
             </div>
-            <Badge tone={partido.estado === 'EN_JUEGO' ? 'info' : partido.estado === 'FINALIZADO' ? 'success' : 'warning'}>
+            <Badge
+              tone={
+                partido.estado === 'EN_JUEGO'
+                  ? 'info'
+                  : partido.estado === 'FINALIZADO'
+                  ? 'success'
+                  : 'warning'
+              }
+            >
               {partido.estado}
             </Badge>
           </div>
+
           <div className="grid gap-3 md:grid-cols-3">
             <div>
               <p className="text-xs uppercase text-slate-500">Fecha</p>
-              <p className="text-sm font-semibold text-slate-900">{formatDateTime(partido.fecha)}</p>
+              {/* ✅ fechaHora */}
+              <p className="text-sm font-semibold text-slate-900">
+                {formatDateTime(partido.fechaHora)}
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase text-slate-500">Cancha</p>
@@ -222,7 +257,9 @@ export const PartidoDetailPage: React.FC = () => {
             </div>
             <div>
               <p className="text-xs uppercase text-slate-500">Equipos</p>
-              <p className="text-sm font-semibold text-slate-900">{partido.equipoA} / {partido.equipoB}</p>
+              <p className="text-sm font-semibold text-slate-900">
+                {partido.equipoANombre} / {partido.equipoBNombre}
+              </p>
             </div>
           </div>
         </Card>
@@ -236,10 +273,18 @@ export const PartidoDetailPage: React.FC = () => {
               <p className="text-xs text-slate-500">Buscá y asigná al equipo correspondiente.</p>
             </div>
             <div className="flex gap-2">
-              <Button variant={selectedTeam === 'A' ? 'primary' : 'secondary'} size="sm" onClick={() => setSelectedTeam('A')}>
+              <Button
+                variant={selectedTeam === 'A' ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setSelectedTeam('A')}
+              >
                 Equipo A
               </Button>
-              <Button variant={selectedTeam === 'B' ? 'primary' : 'secondary'} size="sm" onClick={() => setSelectedTeam('B')}>
+              <Button
+                variant={selectedTeam === 'B' ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setSelectedTeam('B')}
+              >
                 Equipo B
               </Button>
             </div>
@@ -259,10 +304,15 @@ export const PartidoDetailPage: React.FC = () => {
                 {filteredJugadores.map((jugador) => {
                   const isSelected = selectedDraft.some((item) => item.jugadorId === jugador.id);
                   return (
-                    <div key={jugador.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm">
+                    <div
+                      key={jugador.id}
+                      className="flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-sm"
+                    >
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{jugador.nombre}</p>
-                        <p className="text-xs text-slate-500">{isSelected ? 'Seleccionado' : 'Disponible'}</p>
+                        <p className="text-xs text-slate-500">
+                          {isSelected ? 'Seleccionado' : 'Disponible'}
+                        </p>
                       </div>
                       <Button
                         size="sm"
@@ -288,11 +338,19 @@ export const PartidoDetailPage: React.FC = () => {
               </div>
               <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
                 {equipoA.map((item) => (
-                  <div key={item.jugadorId} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                  <div
+                    key={item.jugadorId}
+                    className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2"
+                  >
                     <p className="text-sm font-semibold text-slate-900">
-                      {jugadoresActivos.find((jugador) => jugador.id === item.jugadorId)?.nombre ?? 'Jugador'}
+                      {jugadoresActivos.find((j) => j.id === item.jugadorId)?.nombre ?? 'Jugador'}
                     </p>
-                    <Button variant="ghost" size="sm" disabled={!isAdmin} onClick={() => handleRemove(item.jugadorId)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!isAdmin}
+                      onClick={() => handleRemove(item.jugadorId)}
+                    >
                       Quitar
                     </Button>
                   </div>
@@ -308,11 +366,19 @@ export const PartidoDetailPage: React.FC = () => {
               </div>
               <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
                 {equipoB.map((item) => (
-                  <div key={item.jugadorId} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                  <div
+                    key={item.jugadorId}
+                    className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2"
+                  >
                     <p className="text-sm font-semibold text-slate-900">
-                      {jugadoresActivos.find((jugador) => jugador.id === item.jugadorId)?.nombre ?? 'Jugador'}
+                      {jugadoresActivos.find((j) => j.id === item.jugadorId)?.nombre ?? 'Jugador'}
                     </p>
-                    <Button variant="ghost" size="sm" disabled={!isAdmin} onClick={() => handleRemove(item.jugadorId)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!isAdmin}
+                      onClick={() => handleRemove(item.jugadorId)}
+                    >
                       Quitar
                     </Button>
                   </div>
@@ -322,11 +388,7 @@ export const PartidoDetailPage: React.FC = () => {
             </div>
           </div>
 
-          <Button
-            className="w-full"
-            onClick={confirmSeleccion}
-            disabled={!isAdmin || anotarMutation.isPending}
-          >
+          <Button className="w-full" onClick={confirmSeleccion} disabled={!isAdmin || anotarMutation.isPending}>
             Confirmar selección inicial
           </Button>
         </Card>
@@ -356,6 +418,7 @@ export const PartidoDetailPage: React.FC = () => {
             <p className="text-sm font-semibold text-slate-900">Paso 4: Gestionar participaciones</p>
             <p className="text-xs text-slate-500">Bajas, reactivar o mover jugadores entre equipos.</p>
           </div>
+
           <Tabs
             tabs={[
               { id: 'presentes', label: `Presentes (${presentes.length})` },
@@ -370,12 +433,15 @@ export const PartidoDetailPage: React.FC = () => {
               <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{item.jugadorNombre}</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {item.jugadorNombre ?? 'Jugador'}
+                    </p>
                     <p className="text-xs text-slate-500">
                       Equipo {item.equipo} · Anotado: {formatDateTime(item.anotado_at)}
                       {item.baja_at && ` · Baja: ${formatDateTime(item.baja_at)}`}
                     </p>
                   </div>
+
                   {isAdmin && (
                     <div className="flex flex-wrap gap-2">
                       {tab === 'presentes' && (
@@ -383,7 +449,11 @@ export const PartidoDetailPage: React.FC = () => {
                           <Button variant="secondary" size="sm" onClick={() => handleTeamAction('cambiar', item)}>
                             Cambiar equipo
                           </Button>
-                          <Button variant="danger" size="sm" onClick={() => bajaMutation.mutate({ participacionId: item.id })}>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => bajaMutation.mutate({ participacionId: item.id })}
+                          >
                             Dar baja
                           </Button>
                         </>
@@ -398,6 +468,7 @@ export const PartidoDetailPage: React.FC = () => {
                 </div>
               </div>
             ))}
+
             {(tab === 'presentes' ? presentes : bajas).length === 0 && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
                 No hay registros en este estado.
@@ -413,6 +484,7 @@ export const PartidoDetailPage: React.FC = () => {
             <p className="text-sm font-semibold text-slate-900">Paso 5: Finalizar partido</p>
             <p className="text-xs text-slate-500">Elegí ganador y cerrá el partido.</p>
           </div>
+
           <div className="grid gap-3 md:grid-cols-3">
             {(['A', 'B', 'EMPATE'] as const).map((option) => (
               <button
@@ -420,13 +492,17 @@ export const PartidoDetailPage: React.FC = () => {
                 type="button"
                 onClick={() => setWinner(option)}
                 className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                  winner === option ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-200 bg-white text-slate-700'
+                  winner === option
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-slate-200 bg-white text-slate-700'
                 }`}
               >
-                {option === 'A' ? partido.equipoA : option === 'B' ? partido.equipoB : 'Empate'}
+                {/* ✅ nombres correctos */}
+                {option === 'A' ? partido.equipoANombre : option === 'B' ? partido.equipoBNombre : 'Empate'}
               </button>
             ))}
           </div>
+
           <Button
             className="w-full"
             onClick={() => finalizarMutation.mutate({ ganador: winner })}
@@ -434,19 +510,6 @@ export const PartidoDetailPage: React.FC = () => {
           >
             Finalizar partido
           </Button>
-
-          {partido.estado === 'FINALIZADO' && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-sm font-semibold text-emerald-800">Resumen</p>
-              <p className="text-xs text-emerald-700">Ganador: {partido.ganador ?? 'Pendiente'}</p>
-              <p className="text-xs text-emerald-700">Asistentes Equipo A: {presentes.filter((item) => item.equipo === 'A').length}</p>
-              <p className="text-xs text-emerald-700">Asistentes Equipo B: {presentes.filter((item) => item.equipo === 'B').length}</p>
-              <p className="text-xs text-emerald-700">Bajas: {bajas.length}</p>
-              <a className="mt-2 inline-block text-xs font-semibold text-emerald-700" href="/stats">
-                Ir a /stats/ganadores
-              </a>
-            </div>
-          )}
         </Card>
       </section>
 

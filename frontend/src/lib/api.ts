@@ -26,6 +26,9 @@ export async function apiFetch<T>(
     admin?: boolean;
   } = {}
 ): Promise<T> {
+  const method = options.method ?? 'GET';
+  const isGet = method.toUpperCase() === 'GET';
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -37,9 +40,16 @@ export async function apiFetch<T>(
     }
   }
 
+  // ✅ Evitar 304 / cache del navegador (sobre todo en GET)
+  if (isGet) {
+    headers['Cache-Control'] = 'no-cache';
+    headers['Pragma'] = 'no-cache';
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
+    method,
     headers,
+    cache: isGet ? 'no-store' : undefined, // 👈 clave para que no vuelva 304
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

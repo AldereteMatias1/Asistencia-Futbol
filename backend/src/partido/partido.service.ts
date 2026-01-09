@@ -8,22 +8,29 @@ import { FinalizarPartidoDto } from './dto/finalizar-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { GanadorPartido, Partido } from './entities/partido.entity';
 import { PartidoRepository } from './partido.repository';
+import { ParticipacionRepository } from '../participacion/participacion.repository';
 
 @Injectable()
 export class PartidoService {
-  constructor(private readonly partidoRepository: PartidoRepository) {}
+  constructor(
+    private readonly partidoRepository: PartidoRepository,
+    private readonly participacionRepository: ParticipacionRepository,
+  ) {}
 
   async create(createPartidoDto: CreatePartidoDto) {
     this.validarTexto(createPartidoDto.cancha, 'cancha');
     this.validarTexto(createPartidoDto.equipoANombre, 'equipoANombre');
     this.validarTexto(createPartidoDto.equipoBNombre, 'equipoBNombre');
+
     const fechaHora = this.parseFecha(createPartidoDto.fechaHora);
+
     const partido = Partido.crear(
       fechaHora,
       createPartidoDto.cancha,
       createPartidoDto.equipoANombre,
       createPartidoDto.equipoBNombre,
     );
+
     const creado = await this.partidoRepository.create(partido);
     return this.toResponse(creado);
   }
@@ -35,17 +42,39 @@ export class PartidoService {
 
   async findOne(id: number) {
     const partido = await this.partidoRepository.findById(id);
-    if (!partido) {
-      throw new NotFoundException('Partido no encontrado');
-    }
-    return this.toResponse(partido);
+    if (!partido) throw new NotFoundException('Partido no encontrado');
+
+    // ✅ usar detalle con join a jugadores
+    const rows = await this.participacionRepository.findDetalleByPartido(id);
+
+    return {
+      ...this.toResponse(partido),
+      participaciones: rows.map((r: any) => ({
+        id: String(r.id_participacion),
+        jugadorId: String(r.jugador_id),
+        partidoId: String(r.partido_id),
+        equipo: r.equipo, // ya viene ::text
+        estado: r.estado,
+        anotado_at: new Date(r.anotado_at).toISOString(),
+        baja_at: r.baja_at ? new Date(r.baja_at).toISOString() : null,
+        comentarios: r.comentarios ?? null,
+
+        // ✅ esto es lo que te falta para que se vea el nombre
+        jugadorNombre: `${r.nombre_jugador} ${r.apellido_jugador}`,
+
+        // ✅ tu front usa activo para filtrar presentes/bajas
+        activo: r.estado === 'PRESENTE',
+      })),
+    };
   }
+
 
   async update(id: number, updatePartidoDto: UpdatePartidoDto) {
     const partido = await this.partidoRepository.findById(id);
     if (!partido) {
       throw new NotFoundException('Partido no encontrado');
     }
+
     if (
       updatePartidoDto.fechaHora === undefined &&
       updatePartidoDto.cancha === undefined &&
@@ -54,6 +83,7 @@ export class PartidoService {
     ) {
       throw new BadRequestException('No hay datos para actualizar');
     }
+
     if (updatePartidoDto.cancha !== undefined) {
       this.validarTexto(updatePartidoDto.cancha, 'cancha');
     }
@@ -63,9 +93,11 @@ export class PartidoService {
     if (updatePartidoDto.equipoBNombre !== undefined) {
       this.validarTexto(updatePartidoDto.equipoBNombre, 'equipoBNombre');
     }
+
     const fechaHora = updatePartidoDto.fechaHora
       ? this.parseFecha(updatePartidoDto.fechaHora)
       : undefined;
+
     try {
       partido.actualizarDetalles(
         fechaHora,
@@ -76,6 +108,7 @@ export class PartidoService {
     } catch (error) {
       throw new BadRequestException((error as Error).message);
     }
+
     const actualizado = await this.partidoRepository.update(partido);
     return this.toResponse(actualizado);
   }
@@ -99,12 +132,15 @@ export class PartidoService {
     if (!partido) {
       throw new NotFoundException('Partido no encontrado');
     }
+
     const ganador = this.validarGanador(finalizarPartidoDto.ganador);
+
     try {
       partido.finalizar(ganador);
     } catch (error) {
       throw new BadRequestException((error as Error).message);
     }
+
     const actualizado = await this.partidoRepository.update(partido);
     return this.toResponse(actualizado);
   }
@@ -157,6 +193,23 @@ export class PartidoService {
       ganador: partido.obtenerGanador(),
       equipoANombre: partido.obtenerEquipoANombre(),
       equipoBNombre: partido.obtenerEquipoBNombre(),
+    };
+  }
+
+  // ✅ Respuesta para detalle con participaciones
+  private toDetalleResponse(partido: Partido, participaciones: any[]) {
+    return {
+      ...this.toResponse(partido),
+      participaciones: participaciones.map((p: any) => ({
+        id: String(p.obtenerId?.() ?? p.id),
+        jugadorId: String(p.obtenerJugadorId?.() ?? p.jugadorId),
+        partidoId: String(p.obtenerPartidoId?.() ?? p.partidoId),
+        equipo: p.obtenerEquipo?.() ?? p.equipo,
+        estado: p.obtenerEstado?.() ?? p.estado,
+        anotado_at: (p.obtenerAnotadoAt?.() ?? p.anotadoAt)?.toISOString?.() ?? p.anotado_at,
+        baja_at: (p.obtenerBajaAt?.() ?? p.bajaAt)?.toISOString?.() ?? p.baja_at ?? null,
+        activo: (p.obtenerEstado?.() ?? p.estado) === 'PRESENTE',
+      })),
     };
   }
 }

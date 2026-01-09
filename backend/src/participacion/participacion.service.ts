@@ -25,6 +25,7 @@ export class ParticipacionService {
 
   async anotar(partidoId: number, dto: AnotarParticipacionDto) {
     this.validarEquipo(dto.equipo);
+
     if (!dto.jugadorId) {
       throw new BadRequestException('jugadorId es obligatorio');
     }
@@ -35,10 +36,12 @@ export class ParticipacionService {
         throw new NotFoundException('Partido no encontrado');
       }
       this.validarNoFinalizado(partido);
+
       const jugador = await this.jugadorRepository.findById(dto.jugadorId, client);
       if (!jugador) {
         throw new NotFoundException('Jugador no encontrado');
       }
+
       const existente = await this.participacionRepository.findByPartidoYJugador(
         partidoId,
         dto.jugadorId,
@@ -47,98 +50,111 @@ export class ParticipacionService {
       if (existente) {
         throw new ConflictException('Jugador ya anotado en el partido');
       }
+
       const participacion = Participacion.crear(
         dto.jugadorId,
         partidoId,
         dto.equipo,
         dto.comentarios,
       );
-      const creada = await this.participacionRepository.create(
-        participacion,
-        client,
-      );
+
+      const creada = await this.participacionRepository.create(participacion, client);
       return this.toResponse(creada);
     });
   }
 
   async baja(partidoId: number, dto: BajaParticipacionDto) {
-    if (!dto.jugadorId) {
-      throw new BadRequestException('jugadorId es obligatorio');
+    const participacionId = Number(dto.participacionId);
+    if (!participacionId) {
+      throw new BadRequestException('participacionId es obligatorio');
     }
+
     return this.dbService.withTransaction(async (client) => {
-      const partido = await this.partidoRepository.findById(partidoId, client);
-      if (!partido) {
-        throw new NotFoundException('Partido no encontrado');
-      }
+      const partido = await this.partidoRepository.findById(Number(partidoId), client);
+      if (!partido) throw new NotFoundException('Partido no encontrado');
+
       this.validarNoFinalizado(partido);
-      const participacion = await this.participacionRepository.findByPartidoYJugador(
-        partidoId,
-        dto.jugadorId,
-        client,
-      );
-      if (!participacion) {
-        throw new NotFoundException('Participacion no encontrada');
+
+      const participacion = await this.participacionRepository.findById(participacionId, client);
+      if (!participacion) throw new NotFoundException('Participacion no encontrada');
+
+      if (Number(participacion.obtenerPartidoId()) !== Number(partidoId)) {
+        throw new BadRequestException('La participación no pertenece a este partido');
       }
+
       participacion.darBaja(dto.comentarios);
-      const actualizada = await this.participacionRepository.update(
-        participacion,
-        client,
-      );
+
+      const actualizada = await this.participacionRepository.update(participacion, client);
       return this.toResponse(actualizada);
     });
   }
 
+
   async reactivar(partidoId: number, dto: ReactivarParticipacionDto) {
-    if (!dto.jugadorId) {
-      throw new BadRequestException('jugadorId es obligatorio');
+    if (!dto.participacionId) {
+      throw new BadRequestException('participacionId es obligatorio');
     }
+
     return this.dbService.withTransaction(async (client) => {
       const partido = await this.partidoRepository.findById(partidoId, client);
       if (!partido) {
         throw new NotFoundException('Partido no encontrado');
       }
       this.validarNoFinalizado(partido);
-      const participacion = await this.participacionRepository.findByPartidoYJugador(
-        partidoId,
-        dto.jugadorId,
+
+      const participacion = await this.participacionRepository.findById(
+        dto.participacionId,
         client,
       );
       if (!participacion) {
         throw new NotFoundException('Participacion no encontrada');
       }
+
+      if (participacion.obtenerPartidoId() !== partidoId) {
+        throw new BadRequestException('La participación no pertenece a este partido');
+      }
+
       participacion.reactivar(dto.comentarios);
-      const actualizada = await this.participacionRepository.update(
-        participacion,
-        client,
-      );
+
+      if (dto.equipo) {
+        this.validarEquipo(dto.equipo);
+        participacion.cambiarEquipo(dto.equipo);
+      }
+
+      const actualizada = await this.participacionRepository.update(participacion, client);
       return this.toResponse(actualizada);
     });
   }
 
   async cambiarEquipo(partidoId: number, dto: CambiarEquipoDto) {
-    if (!dto.jugadorId) {
-      throw new BadRequestException('jugadorId es obligatorio');
+    if (!dto.participacionId) {
+      throw new BadRequestException('participacionId es obligatorio');
     }
+
     this.validarEquipo(dto.equipo);
+
     return this.dbService.withTransaction(async (client) => {
       const partido = await this.partidoRepository.findById(partidoId, client);
       if (!partido) {
         throw new NotFoundException('Partido no encontrado');
       }
       this.validarNoFinalizado(partido);
-      const participacion = await this.participacionRepository.findByPartidoYJugador(
-        partidoId,
-        dto.jugadorId,
+
+      const participacion = await this.participacionRepository.findById(
+        dto.participacionId,
         client,
       );
       if (!participacion) {
         throw new NotFoundException('Participacion no encontrada');
       }
+
+      if (participacion.obtenerPartidoId() !== partidoId) {
+        throw new BadRequestException('La participación no pertenece a este partido');
+      }
+
       participacion.cambiarEquipo(dto.equipo);
-      const actualizada = await this.participacionRepository.update(
-        participacion,
-        client,
-      );
+
+      const actualizada = await this.participacionRepository.update(participacion, client);
       return this.toResponse(actualizada);
     });
   }
