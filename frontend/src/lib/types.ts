@@ -35,17 +35,23 @@ export type PartidoDetalle = Partido & {
 
 export type StatAsistencia = {
   jugadorId: string;
-  jugadorNombre: string;
-  total: number;
+  nombre: string;
+  apellido: string;
+  asistencias: number;
 };
 
 export type StatBaja = {
   jugadorId: string;
-  jugadorNombre: string;
-  total: number;
+  nombre: string;
+  apellido: string;
+  bajas: number;
 };
 
 export type StatGanador = {
-  equipo: string;
-  total: number;
+  jugadorId: string;
+  nombre: string;
+  apellido: string;
+  partidosJugados: number;
+  victorias: number;
+  winrate: number; // 66.67
 };
