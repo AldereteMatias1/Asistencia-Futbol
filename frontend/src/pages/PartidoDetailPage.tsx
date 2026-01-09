@@ -434,7 +434,7 @@ export const PartidoDetailPage: React.FC = () => {
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">
-                      {item.jugadorNombre ?? 'Jugador'}
+                      {item.jugadorNombre  ?? 'Jugador'}
                     </p>
                     <p className="text-xs text-slate-500">
                       Equipo {item.equipo} · Anotado: {formatDateTime(item.anotado_at)}

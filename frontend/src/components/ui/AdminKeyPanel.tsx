@@ -29,7 +29,7 @@ export const AdminKeyPanel: React.FC<{ compact?: boolean }> = ({ compact }) => {
       <div className="mt-2 flex flex-col gap-2">
         <Input
           type="password"
-          placeholder="Pegá tu API key"
+          placeholder="Ingresar contraseña"
           value={value}
           onChange={(event) => setValue(event.target.value)}
         />
