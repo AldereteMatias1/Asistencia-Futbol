@@ -54,10 +54,10 @@ export const PartidosPage: React.FC = () => {
 
   const onSubmit = (values: FormValues) =>
     createMutation.mutate({
-      fechaHora: new Date(values.fecha).toISOString(),
+      fecha: new Date(values.fecha).toISOString(),
       cancha: values.cancha,
-      equipoANombre: values.equipoA,
-      equipoBNombre: values.equipoB,
+      equipoA: values.equipoA,
+      equipoB: values.equipoB,
   });
 
 
@@ -142,10 +142,10 @@ export const PartidosPage: React.FC = () => {
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
-                    {partido.equipoANombre} vs {partido.equipoBNombre}
+                    {partido.equipoA} vs {partido.equipoB}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {formatDateTime(partido.fechaHora)} · {partido.cancha}
+                    {formatDateTime(partido.fecha)} · {partido.cancha}
                   </p>
 
                 </div>

@@ -7,6 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Table } from '../components/ui/Table';
 import { API_BASE_URL } from '../config';
 import { Button } from '../components/ui/Button';
+import { StatAsistencia, StatBaja, StatGanador } from '../lib/types';
 
 const TopList: React.FC<{
   title: string;
@@ -47,18 +48,25 @@ const TopList: React.FC<{
 export const DashboardPage: React.FC = () => {
   const jugadoresQuery = useQuery({ queryKey: ['jugadores'], queryFn: fetchJugadores });
   const partidosQuery = useQuery({ queryKey: ['partidos'], queryFn: () => fetchPartidos() });
-  const asistenciasQuery = useQuery({ queryKey: ['stats', 'asistencias'], queryFn: fetchAsistencias });
-  const bajasQuery = useQuery({ queryKey: ['stats', 'bajas'], queryFn: fetchBajas });
-  const ganadoresQuery = useQuery({
+
+  const asistenciasQuery = useQuery<StatAsistencia[]>({
+    queryKey: ['stats', 'asistencias', 100],
+    queryFn: () => fetchAsistencias(),
+  });
+
+  const bajasQuery = useQuery<StatBaja[]>({
+    queryKey: ['stats', 'bajas', 100],
+    queryFn: () => fetchBajas(),
+  });
+
+  const ganadoresQuery = useQuery<StatGanador[]>({
     queryKey: ['stats', 'ganadores', 1, 10],
     queryFn: () => fetchGanadores({ minPartidos: 1, limit: 10 }),
   });
 
-const totalAsistencias =
-  asistenciasQuery.data?.reduce((acc, item) => acc + item.asistencias, 0) ?? 0;
+  const totalAsistencias = asistenciasQuery.data?.reduce((acc, item) => acc + item.asistencias, 0) ?? 0;
+  const totalBajas = bajasQuery.data?.reduce((acc, item) => acc + item.bajas, 0) ?? 0;
 
-const totalBajas =
-  bajasQuery.data?.reduce((acc, item) => acc + item.bajas, 0) ?? 0;
 
 
   const isLoading =
@@ -138,28 +146,36 @@ const totalBajas =
           title="Top 10 asistencias"
           headers={['Jugador', 'Total']}
           rows={(asistenciasQuery.data ?? []).slice(0, 10).map((item) => ({
-            key: String(item.jugadorId),
-            cols: [`${item.nombre} ${item.apellido}`, item.asistencias],
-          }))}
+          key: item.jugadorId,
+          cols: [`${item.nombre} ${item.apellido}`.trim(), item.asistencias],
+        }))}
+
 
         />
         <TopList
           title="Top 10 bajas"
           headers={['Jugador', 'Total']}
           rows={(bajasQuery.data ?? []).slice(0, 10).map((item) => ({
-            key: String(item.jugadorId),
-            cols: [`${item.nombre} ${item.apellido}`, item.bajas],
+            key: item.jugadorId,
+            cols: [`${item.nombre} ${item.apellido}`.trim(), item.bajas],
           }))}
+
 
         />
         <TopList
-          title="Top ganadores (winrate)"
-          headers={['Jugador', 'Winrate']}
+          title="Top ganadores"
+          headers={['Jugador', 'PJ', 'Victorias', 'Winrate']}
           rows={(ganadoresQuery.data ?? []).map((item) => ({
-            key: String(item.jugadorId),
-            cols: [`${item.nombre} ${item.apellido}`, `${item.winrate.toFixed(2)}%`],
+            key: item.jugadorId,
+            cols: [
+              `${item.nombre} ${item.apellido}`.trim(),
+              item.partidosJugados,
+              item.victorias,
+              `${item.winrate.toFixed(2)}%`,
+            ],
           }))}
         />
+
 
       </div>
     </div>

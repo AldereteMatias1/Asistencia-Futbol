@@ -54,8 +54,6 @@ export const StatsPage: React.FC = () => {
       }) as Promise<GanadoresRow[]>,
   });
 
-  const fullName = (row: { nombre: string; apellido: string }) => `${row.nombre} ${row.apellido}`.trim();
-
   return (
     <div className="container-page space-y-6">
       <div>
