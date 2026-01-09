@@ -210,7 +210,7 @@ export const PartidoDetailPage: React.FC = () => {
       <div className="space-y-2">
         {/* ✅ campos correctos */}
         <h2 className="text-2xl font-semibold text-slate-900">
-          {partido.equipoANombre} vs {partido.equipoBNombre}
+          {partido.equipoA} vs {partido.equipoB}
         </h2>
         <p className="text-sm text-slate-500">Flujo del partido y operaciones admin.</p>
       </div>
@@ -248,7 +248,7 @@ export const PartidoDetailPage: React.FC = () => {
               <p className="text-xs uppercase text-slate-500">Fecha</p>
               {/* ✅ fechaHora */}
               <p className="text-sm font-semibold text-slate-900">
-                {formatDateTime(partido.fechaHora)}
+                {formatDateTime(partido.fecha)}
               </p>
             </div>
             <div>
@@ -258,7 +258,7 @@ export const PartidoDetailPage: React.FC = () => {
             <div>
               <p className="text-xs uppercase text-slate-500">Equipos</p>
               <p className="text-sm font-semibold text-slate-900">
-                {partido.equipoANombre} / {partido.equipoBNombre}
+                {partido.equipoA} / {partido.equipoB}
               </p>
             </div>
           </div>
@@ -498,7 +498,7 @@ export const PartidoDetailPage: React.FC = () => {
                 }`}
               >
                 {/* ✅ nombres correctos */}
-                {option === 'A' ? partido.equipoANombre : option === 'B' ? partido.equipoBNombre : 'Empate'}
+                {option === 'A' ? partido.equipoA : option === 'B' ? partido.equipoB : 'Empate'}
               </button>
             ))}
           </div>

@@ -89,3 +89,37 @@ CREATE INDEX IF NOT EXISTS idx_partidos_fecha ON partidos(fecha_hora);
 CREATE INDEX IF NOT EXISTS idx_participaciones_partido ON participaciones(partido_id);
 CREATE INDEX IF NOT EXISTS idx_participaciones_jugador ON participaciones(jugador_id);
 CREATE INDEX IF NOT EXISTS idx_participaciones_estado ON participaciones(estado);
+
+INSERT INTO mydb.jugadores (nombre_jugador, apellido_jugador, activo) VALUES
+('Leon', 'Breslauer', true),
+('Joaquín', 'Tejer', true),
+('Kakui', 'Z', true),
+('Lucas', 'Carbajal', true),
+('Nahuel', 'Carbajal', true),
+('Javier', 'Reinoso', true),
+('Martin', 'Lencina', true),
+('Agucho', 'Mesa', true),
+('Agustin', 'Z', true),
+('Agustín', 'Lizarraga', true),
+('Bruno', 'Pastinante', true),
+('Cris', 'Z', true),
+('Diego', 'Z', true),
+('Fran', 'Z', true),
+('Ger', 'Z', true),
+('Ivan', 'Mejia', true),
+('Ivan', 'Sanchez', true),
+('Jose', 'Ale', true),
+('JP', 'Z', true),
+('Lean', 'Costilla', true),
+('Lucas', 'Z', true),
+('Luciano', 'Ibañez', true),
+('Marcos', 'Borsini', true),
+('Mariano', 'Z', true),
+('Matias', 'Correa', true),
+('Mauricio', 'Costilla', true),
+('Mocho', 'Diaz', true),
+('Nico', 'Trivi', true),
+('Nicolas', 'Juri', true),
+('Santy', 'Z', true),
+('Matias', 'Alderete', true);
+

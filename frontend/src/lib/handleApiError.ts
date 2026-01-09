@@ -5,14 +5,21 @@ type Options = {
   onUnauthorized?: () => void;
 };
 
-export const handleApiError = (error: unknown, options?: Options) => {
-  const apiError = error as ApiError;
-  if (apiError?.status === 401) {
-    toast.error('No autorizado');
-    clearAdminKey();
-    options?.onUnauthorized?.();
-    return;
-  }
+// ✅ Factory: vos elegís options y te devuelve una función compatible con React Query
+export const createApiErrorHandler =
+  (options?: Options) =>
+  (error: unknown) => {
+    const apiError = error as ApiError;
 
-  toast.error(apiError?.message ?? 'Ocurrió un error');
-};
+    if (apiError?.status === 401) {
+      toast.error('No autorizado');
+      clearAdminKey();
+      options?.onUnauthorized?.();
+      return;
+    }
+
+    toast.error(apiError?.message ?? 'Ocurrió un error');
+  };
+
+// ✅ Default para usar directo: onError: handleApiError
+export const handleApiError = createApiErrorHandler();

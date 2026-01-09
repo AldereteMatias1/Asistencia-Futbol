@@ -37,12 +37,12 @@ export const StatsPage: React.FC = () => {
 
   const asistenciasQuery = useQuery({
     queryKey: ['stats', 'asistencias', limit],
-    queryFn: () => fetchAsistencias({ limit: Number(limit) || 50 }) as Promise<AsistenciaRow[]>,
+    queryFn: () => fetchAsistencias() as Promise<AsistenciaRow[]>,
   });
 
   const bajasQuery = useQuery({
     queryKey: ['stats', 'bajas', limit],
-    queryFn: () => fetchBajas({ limit: Number(limit) || 50 }) as Promise<BajasRow[]>,
+    queryFn: () => fetchBajas() as Promise<BajasRow[]>,
   });
 
   const ganadoresQuery = useQuery({
